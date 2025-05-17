@@ -1,9 +1,12 @@
-import dotenv from 'dotenv';
-import express from 'express';
-import cors from 'cors';
 
+import express from 'express';
+import dotnev from 'dotenv';
+import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import connectDb from './config/database.js';
+import authRouter from './Routes/authRoutes.js';
+
+dotnev.config();
 
 const app = express();
 const port=process.env.PORT || 4005;
@@ -13,11 +16,17 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({credentials:true}))
 
+
+
 connectDb(DATABASE_URL)
 
 app.get('/', (req, res) => {
   res.send('API is running');
 });
+app.use('/api/auth/',authRouter);
+
+
+
 
 
 app.listen(port,()=>(console.log(`server is rinning in the port ${port}`)))
