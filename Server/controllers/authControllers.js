@@ -3,6 +3,7 @@ import userModel from '../Models/userModel.js';
 import jwt from 'jsonwebtoken';
 import transporter from '../config/nodemailer.js';
 import dotenv from 'dotenv';
+import {promisify} from 'util'
 
 dotenv.config();
 
@@ -51,18 +52,18 @@ const token=jwt.sign({id:user._id},JWT_SECRET,{expiresIn:'7d'});
 transporter.sendMail({
   from: process.env.SENDERS_EMAIL_ID,
   to: email,
-  subject: 'Test Email',
-  text: 'This is a test message from Nodemailer + Brevo.'
+  subject: 'sSign In Email',
+  text: 'This is a tet message from Nodemailer + Brevo.'
 }, (err, info) => {
   if (err) return console.error("❌ Error:", err.message);
   console.log("✅ Email sent:", info.response);
 });
 
-        return res.json({sucess:true});
+    return res.json({sucess:true});
 
 
   }catch(error){
-    res.json({sucess:false,message:error.message});
+   return res.json({sucess:false,message:error.message});
     
   }
 }
@@ -100,7 +101,7 @@ export const login=async(req,res)=>{
 
 
   }catch(error){
-    res.json({sucess:false,message:error.message});
+   return res.json({sucess:false,message:error.message});
   }
 }
 
@@ -108,7 +109,7 @@ export const login=async(req,res)=>{
 
 export const logout=async(req,res)=>{
   try{
-      res.clearCookie('token',token,{
+      res.clearCookie('token',{
         httpOnly:true,
         secure:process.env.NODE_ENV === 'production',
         sameSite:process.env.NODE_ENV === 'production'? 'none':'strict',
@@ -118,63 +119,65 @@ export const logout=async(req,res)=>{
        return res.json({sucess:true,message:"logout sucessfully"});
 
   }catch(error){
-    res.json({sucess:false,message:error.message});
+   return res.json({sucess:false,message:error.message});
   }
 }
 
 
 
 
-const sendVerifyOtp=async(req,res)=>{
+export const sendVerifyOtp=async(req,res)=>{
   try{
-     const {userId}=res.body;
+     const userId=req.user?.id;
 
      const user=await userModel.findById(userId);
 
      if(user.isAccountVerified){
       return res.json({sucess:false,message:'your account is already verified'});
      }
-    const otp=String( Math.floor(10000+Math.random()*90000));
+    const otp=String( Math.floor(100000+Math.random()*90000));
     user.verifyOTP=otp;
     user.verifyexpireOtp= Date.now()+24*60*60*1000;
 
     await user.save();
 
 
-    transporter.sendMail({
-  from: process.env.SENDERS_EMAIL_ID,
-  to: email,
-  subject: 'Verified OTP',
-  text: `your veryfied otp is ${otp}`
-}, (err, info) => {
-  if (err) return console.error("❌ Error:", err.message);
-  console.log("✅ OTP sent:", info.response);
-});
+ const sendMail = promisify(transporter.sendMail).bind(transporter);
+
+    await sendMail({
+      from: process.env.SENDERS_EMAIL_ID,
+      to: user.email,
+      subject: 'Verify OTP',
+      text: `Your verification OTP is: ${otp}`
+    });
+
+    return res.json({success:true,message:'verify otp correctly'});
 
   }catch(error){
-    res.json({sucess:false,message:error.message})
+   return res.json({sucess:false,message:error.message})
   }
 }
 
 
 
 
-const verifyEmail=async(req,res)=>{
-  const {userId,otp}=req.body;
+export const verifyEmail=async(req,res)=>{
+  const {otp}=req.body;
+   const userId=req.user?.id;
 
 
   if(!userId || !otp ){
-     res.json({sucess:false,message:'missing details'});
+    return res.json({sucess:false,message:'missing details'});
   }
 
   try{
     const user =await userModel.findById(userId);
     if(!user){
-       res.json({sucess:false,message:'user not fount'});
+       return res.json({sucess:false,message:'user not fount'});
     }
 
     if(user.verifyOTP===''||user.verifyOTP!==otp){
-       res.json({sucess:false,message:'invalid otp'});
+      return res.json({sucess:false,message:'invalid otp'});
     }
 
     if(user.verifyexpireOtp<Date.now()){
@@ -188,10 +191,19 @@ const verifyEmail=async(req,res)=>{
     await user.save()
     return res.json({sucess:true,message:'email verified sucessfully'});
   }catch(error){
-     res.json({sucess:false,message:error.message});
+    return res.json({sucess:false,message:error.message});
   }
 }
 
+
+
+export const isAutheticated=(req,res)=>{
+     try{
+       return res.json({success:true})
+     }catch(error){
+      return res.json({success:false,message:error.message})
+     }
+}
 
 
 
