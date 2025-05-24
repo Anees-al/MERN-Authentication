@@ -116,10 +116,10 @@ export const logout=async(req,res)=>{
         
        });
 
-       return res.json({sucess:true,message:"logout sucessfully"});
+       return res.json({success:true,message:"logout sucessfully"});
 
   }catch(error){
-   return res.json({sucess:false,message:error.message});
+   return res.json({success:false,message:error.message});
   }
 }
 
@@ -133,7 +133,7 @@ export const sendVerifyOtp=async(req,res)=>{
      const user=await userModel.findById(userId);
 
      if(user.isAccountVerified){
-      return res.json({sucess:false,message:'your account is already verified'});
+      return res.json({success:false,message:'your account is already verified'});
      }
     const otp=String( Math.floor(100000+Math.random()*90000));
     user.verifyOTP=otp;
@@ -155,7 +155,7 @@ export const sendVerifyOtp=async(req,res)=>{
     return res.json({success:true,message:'verify otp correctly'});
 
   }catch(error){
-   return res.json({sucess:false,message:error.message})
+   return res.json({success:false,message:error.message})
   }
 }
 
@@ -168,21 +168,21 @@ export const verifyEmail=async(req,res)=>{
 
 
   if(!userId || !otp ){
-    return res.json({sucess:false,message:'missing details'});
+    return res.json({success:false,message:'missing details'});
   }
 
   try{
     const user =await userModel.findById(userId);
     if(!user){
-       return res.json({sucess:false,message:'user not fount'});
+       return res.json({success:false,message:'user not fount'});
     }
 
     if(user.verifyOTP===''||user.verifyOTP!==otp){
-      return res.json({sucess:false,message:'invalid otp'});
+      return res.json({success:false,message:'invalid otp'});
     }
 
     if(user.verifyexpireOtp<Date.now()){
-      return  res.json({sucess:false,message:'otp expired'});
+      return  res.json({success:false,message:'otp expired'});
     }
 
     user.isAccountVerified=true;
@@ -190,9 +190,9 @@ export const verifyEmail=async(req,res)=>{
     user.verifyexpireOtp=0;
 
     await user.save()
-    return res.json({sucess:true,message:'email verified sucessfully'});
+    return res.json({success:true,message:'email verified sucessfully'});
   }catch(error){
-    return res.json({sucess:false,message:error.message});
+    return res.json({success:false,message:error.message});
   }
 }
 

@@ -9,7 +9,7 @@ import { toast } from 'react-toastify';
 const Login = () => {
  
 
- const {backendurl,setisLoggedIn}=useContext(Appcontent);
+ const {backendurl,setisLoggedIn,getuserData}=useContext(Appcontent);
   const navigate=useNavigate();
   const[state,setstate]=useState('sign up')
   const[name,setname]=useState('');
@@ -20,14 +20,15 @@ const Login = () => {
   const handleSubmit=async(e)=>{
      try{
        e.preventDefault();
-       
+       axios.defaults.withCredentials=true;
 
        if(state==='sign up'){
          const {data}=await axios.post(backendurl+'/api/auth/register',{name,email,password});
-          { withCredentials: true }
+        
 
          if(data.success){
           setisLoggedIn(true);
+          getuserData();
           navigate('/');
           toast.success("Logged in successfully!" ,{style:{ backgroundColor: '#4caf50'}});
          }else{
@@ -35,7 +36,7 @@ const Login = () => {
          }
 
        }else{
-        const respond=await axios.post(backendurl+'/api/auth/login',{email,password},{ withCredentials: true });
+        const respond=await axios.post(backendurl+'/api/auth/login',{email,password});
         const data=respond.data;
         console.log(respond)
         
@@ -44,6 +45,7 @@ const Login = () => {
          if(data.success){
           console.log("success")
           setisLoggedIn(true);
+          getuserData();
           navigate('/');
           toast.success("Logged in successfully!",{style:{ backgroundColor: '#4caf50', color:"white"}});
          }else{
