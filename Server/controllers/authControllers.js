@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import transporter from '../config/nodemailer.js';
 import dotenv from 'dotenv';
 import {promisify} from 'util'
+import { EMAIL_VERIFY_TEMPLATE,PASSWORD_RESET_TEMPLATE } from '../config/emailTemplates.js';
 
 dotenv.config();
 
@@ -52,7 +53,7 @@ const token=jwt.sign({id:user._id},JWT_SECRET,{expiresIn:'7d'});
 transporter.sendMail({
   from: process.env.SENDERS_EMAIL_ID,
   to: email,
-  subject: 'sSign In Email',
+  subject: 'Sign In Email',
   text: 'This is a tet message from Nodemailer + Brevo.'
 }, (err, info) => {
   if (err) return console.error("❌ Error:", err.message);
@@ -149,7 +150,8 @@ export const sendVerifyOtp=async(req,res)=>{
       from: process.env.SENDERS_EMAIL_ID,
       to: user.email,
       subject: 'Verify OTP',
-      text: `Your verification OTP is: ${otp}`
+      //text: `Your verification OTP is: ${otp}`,
+      html:EMAIL_VERIFY_TEMPLATE.replace("{{otp}}",otp).replace("{{email}}",user. email)
     });
 
     return res.json({success:true,message:'verify otp correctly'});
@@ -234,7 +236,8 @@ export const resetOtp=async(req,res)=>{
       from: process.env.SENDERS_EMAIL_ID,
       to: user.email,
       subject: 'Verify OTP',
-      text: `Your verification OTP is: ${otp}`
+     // text: `Your verification OTP is: ${otp}`,
+      html:PASSWORD_RESET_TEMPLATE.replace("{{otp}}",otp).replace("{{email}}",user.email)
     });
 
     return res.json({success:true,message:'verify otp correctly'});
@@ -246,12 +249,12 @@ export const resetOtp=async(req,res)=>{
 
 export const resetpassword=async(req,res)=>{
   const {email,otp,newpassword}=req.body;
-  if(!email || !otp || !password){
+  if(!email || !otp || !newpassword){
     return res.json({success:false,message:'not valid'})
   }
 
   try{
-     const user =await userModel.findOne(email);
+     const user =await userModel.findOne({email});
 
      if(!user){
       return res.json({success:'false',message:'invalid user'});
@@ -262,7 +265,7 @@ export const resetpassword=async(req,res)=>{
       return res.json({success:'false',message:'invalid otp'});
      }
 
-     if(user.resetotpExpiry< date.now()){
+     if(user.resetotpExpiry< Date.now()){
       return res.json({success:'false',message:'otp expired'});
      }
 
